@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>行政書士試験 採点システム（詳細配点＆色設定対応版）</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .question { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; }
+    .status { margin-top: 10px; font-weight: bold; }
+    button { margin-right: 10px; margin-top: 5px; }
+    #summary { margin-top: 30px; padding: 15px; border: 2px solid #444; background: #f7f7f7; }
+  </style>
+</head>
+<body>
+  <h1>行政書士試験 採点システム（詳細配点＆色設定対応版）</h1>
+  <p>
+    【法令科目】（問1～46・合計244点）<br>
+    ・5肢択一式（問1～40、各4点）<br>
+    &nbsp;&nbsp;─ 基礎法学：問1～2<br>
+    &nbsp;&nbsp;─ 憲法：問3～7<br>
+    &nbsp;&nbsp;─ 行政法：問8～26<br>
+    &nbsp;&nbsp;─ 民法：問27～35<br>
+    &nbsp;&nbsp;─ 商法・会社法：問36～40<br>
+    ・多肢選択式（問41～43、各8点）<br>
+    &nbsp;&nbsp;─ 問41：憲法<br>
+    &nbsp;&nbsp;─ 問42～43：行政法<br>
+    ・記述式（問44～46、各20点）<br>
+    &nbsp;&nbsp;─ 問44：行政法<br>
+    &nbsp;&nbsp;─ 問45～46：民法<br><br>
+    【一般知識】（問47～60・合計56点、各4点）<br>
+    &nbsp;&nbsp;─ 政治・経済・社会：問47～53<br>
+    &nbsp;&nbsp;─ 情報通信・個人情報保護：問54～56<br>
+    &nbsp;&nbsp;─ 文章理解：問57～60
+  </p>
+  
+  <div id="questions"></div>
+  
+  <div id="summary">
+    <h2>スコアサマリー</h2>
+    <p id="lawScore">法令科目: 0 / 244点</p>
+    <p id="generalScore">一般知識: 0 / 56点</p>
+    <p id="totalScore">合計: 0 / 300点</p>
+    <p id="passStatus">現時点の合格可能性：---</p>
+  </div>
+  
+  <script>
+    const TOTAL_QUESTIONS = 60;
+    // 配点データの作成（questionsData[0]～questionsData[59]）
+    // 法令科目：問1～46
+    //  Objective：問1～40（インデックス 0～39）
+    //    - 基礎法学：インデックス 0～1
+    //    - 憲法：インデックス 2～6
+    //    - 行政法：インデックス 7～25
+    //    - 民法：インデックス 26～34
+    //    - 商法・会社法：インデックス 35～39
+    //  MultiSelect：問41～43（インデックス 40～42）
+    //    - 問41：憲法
+    //    - 問42～43：行政法
+    //  Descriptive：問44～46（インデックス 43～45）
+    //    - 問44：行政法
+    //    - 問45～46：民法
+    // 一般知識：問47～60（インデックス 46～59）
+    //    - 問47～53：政治・経済・社会
+    //    - 問54～56：情報通信・個人情報保護
+    //    - 問57～60：文章理解
+    
+    let questionsData = [];
+    
+    // 法令科目 Objective（問1～40）
+    for (let i = 0; i < 40; i++) {
+      let obj = { section: "Law", format: "Objective", answer: "未採点", points: 4, subject: "" };
+      if (i < 2) { obj.subject = "基礎法学"; }
+      else if (i < 7) { obj.subject = "憲法"; }
+      else if (i < 26) { obj.subject = "行政法"; }
+      else if (i < 35) { obj.subject = "民法"; }
+      else { obj.subject = "商法・会社法"; }
+      questionsData.push(obj);
+    }
+    
+    // 法令科目 MultiSelect（問41～43）
+    // 問41：憲法
+    questionsData.push({ section: "Law", format: "MultiSelect", answer: "未採点", points: 8, subject: "憲法" });
+    // 問42～43：行政法
+    questionsData.push({ section: "Law", format: "MultiSelect", answer: "未採点", points: 8, subject: "行政法" });
+    questionsData.push({ section: "Law", format: "MultiSelect", answer: "未採点", points: 8, subject: "行政法" });
+    
+    // 法令科目 Descriptive（問44～46）
+    // 問44：行政法
+    questionsData.push({ section: "Law", format: "Descriptive", answer: "未採点", points: 20, subject: "行政法" });
+    // 問45～46：民法
+    questionsData.push({ section: "Law", format: "Descriptive", answer: "未採点", points: 20, subject: "民法" });
+    questionsData.push({ section: "Law", format: "Descriptive", answer: "未採点", points: 20, subject: "民法" });
+    // ここまでで法令科目は46問（インデックス 0～45）
+    
+    // 一般知識 Objective（問47～60、全14問、各4点）
+    for (let i = 0; i < 14; i++) {
+      let obj = { section: "General", format: "Objective", answer: "未採点", points: 4, subject: "" };
+      if (i < 7) { obj.subject = "政治・経済・社会"; }
+      else if (i < 10) { obj.subject = "情報通信・個人情報保護"; }
+      else { obj.subject = "文章理解"; }
+      questionsData.push(obj);
+    }
+    
+    const STORAGE_KEY = "questionsDataDetailed";
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(questionsData));
+    } else {
+      questionsData = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (questionsData.length !== TOTAL_QUESTIONS) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(questionsData));
+      }
+    }
+    
+    function updateStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(questionsData));
+    }
+    
+    // 採点結果表示のテキストと色を更新する関数
+    function updateResultDisplay(element, answer) {
+      element.textContent = "採点結果: " + answer;
+      if (answer === "正解") {
+        element.style.color = "red";
+      } else if (answer === "不正解") {
+        element.style.color = "blue";
+      } else {
+        element.style.color = "gray";
+      }
+    }
+    
+    function updateSummary() {
+      let lawScore = 0;
+      let generalScore = 0;
+      for (let i = 0; i < questionsData.length; i++) {
+        if (questionsData[i].answer === "正解") {
+          if (questionsData[i].section === "Law") {
+            lawScore += questionsData[i].points;
+          } else if (questionsData[i].section === "General") {
+            generalScore += questionsData[i].points;
+          }
+        }
+      }
+      lawScore = Math.round(lawScore * 100) / 100;
+      generalScore = Math.round(generalScore * 100) / 100;
+      let totalScore = Math.round((lawScore + generalScore) * 100) / 100;
+      
+      document.getElementById("lawScore").textContent = `法令科目: ${lawScore} / 244点`;
+      document.getElementById("generalScore").textContent = `一般知識: ${generalScore} / 56点`;
+      document.getElementById("totalScore").textContent = `合計: ${totalScore} / 300点`;
+      
+      let statusText = "";
+      if (totalScore >= 180 && lawScore >= 122 && generalScore >= 24) {
+        statusText = "合格可能性あり！";
+      } else {
+        statusText = "現時点では合格基準に達していません。";
+      }
+      document.getElementById("passStatus").textContent = `現時点の合格可能性：${statusText}`;
+    }
+    
+    function createQuestionElement(index) {
+      const q = questionsData[index];
+      const qDiv = document.createElement("div");
+      qDiv.className = "question";
+      qDiv.id = "question-" + index;
+      
+      const header = document.createElement("h3");
+      header.textContent = "問" + (index + 1);
+      qDiv.appendChild(header);
+      
+      // 問題情報の表示
+      const info = document.createElement("p");
+      info.textContent = `【${q.section}】 形式: ${q.format} / 科目: ${q.subject} / 配点: ${q.points}点`;
+      qDiv.appendChild(info);
+      
+      const resultDisplay = document.createElement("div");
+      resultDisplay.className = "status";
+      updateResultDisplay(resultDisplay, q.answer);
+      qDiv.appendChild(resultDisplay);
+      
+      // 採点操作用ボタン
+      const btnCorrect = document.createElement("button");
+      btnCorrect.textContent = "正解";
+      btnCorrect.onclick = function() {
+        questionsData[index].answer = "正解";
+        updateResultDisplay(resultDisplay, "正解");
+        updateStorage();
+        updateSummary();
+      };
+      qDiv.appendChild(btnCorrect);
+      
+      const btnIncorrect = document.createElement("button");
+      btnIncorrect.textContent = "不正解";
+      btnIncorrect.onclick = function() {
+        questionsData[index].answer = "不正解";
+        updateResultDisplay(resultDisplay, "不正解");
+        updateStorage();
+        updateSummary();
+      };
+      qDiv.appendChild(btnIncorrect);
+      
+      const btnReset = document.createElement("button");
+      btnReset.textContent = "リセット";
+      btnReset.onclick = function() {
+        questionsData[index].answer = "未採点";
+        updateResultDisplay(resultDisplay, "未採点");
+        updateStorage();
+        updateSummary();
+      };
+      qDiv.appendChild(btnReset);
+      
+      return qDiv;
+    }
+    
+    // 各設問のレンダリング
+    const container = document.getElementById("questions");
+    for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+      container.appendChild(createQuestionElement(i));
+    }
+    
+    updateSummary();
+  </script>
+</body>
+</html>
